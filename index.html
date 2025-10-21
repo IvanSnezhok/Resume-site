@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Resume</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* cool-gray-50 */
+        }
+        .editable .edit-input {
+            display: block;
+        }
+        .editable .view-content {
+            display: none;
+        }
+        .edit-input {
+            display: none;
+        }
+        .section-title {
+            border-bottom: 2px solid #e2e8f0; /* cool-gray-200 */
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b; /* cool-gray-800 */
+        }
+        .sidebar {
+            background-color: #1e293b; /* cool-gray-800 */
+            color: #f8fafc;
+        }
+        .sidebar a {
+            color: #94a3b8; /* cool-gray-400 */
+            transition: color 0.3s;
+        }
+        .sidebar a:hover {
+            color: #f8fafc;
+        }
+        .tag {
+            background-color: #334155; /* cool-gray-700 */
+            color: #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+        .btn-secondary {
+            background-color: #475569;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #334155;
+        }
+        .btn-danger {
+            background-color: #dc2626;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <!-- Password Modal -->
+    <div id="password-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm">
+            <h2 class="text-2xl font-bold mb-4 text-center">Edit Access</h2>
+            <p class="text-center text-sm text-gray-600 mb-4">Please enter the password to make changes.</p>
+            <form id="password-form">
+                <input type="password" id="password-input" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                <p id="modal-error" class="text-red-500 text-sm mt-2 text-center h-4"></p>
+                <div class="mt-4 flex justify-end gap-3">
+                     <button type="button" id="cancel-modal-btn" class="btn btn-secondary bg-gray-300 text-gray-800 hover:bg-gray-400">Cancel</button>
+                     <button type="submit" class="btn btn-primary">Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-container" class="max-w-7xl mx-auto my-8 p-4 md:p-8 bg-white rounded-2xl shadow-2xl min-h-screen">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Sidebar -->
+            <aside class="md:col-span-1 sidebar p-8 rounded-xl">
+                <div class="flex flex-col items-center text-center">
+                    <div class="relative">
+                        <img id="photo-view" src="https://placehold.co/160x160/1e293b/f8fafc?text=Photo" class="w-40 h-40 rounded-full object-cover border-4 border-slate-500" alt="Profile Photo">
+                        <div class="edit-input">
+                             <label for="photo-edit" class="text-sm text-gray-300 mb-1 block">Photo URL</label>
+                             <input type="text" id="photo-edit" class="w-full bg-slate-600 border border-slate-500 rounded-md p-2 text-sm text-white" placeholder="https://example.com/photo.jpg">
+                        </div>
+                    </div>
+                    
+                    <div id="name-field" class="w-full mt-4">
+                        <h1 class="text-3xl font-bold text-white view-content" id="name-view">Сергій Гробов</h1>
+                        <input type="text" id="name-edit" class="edit-input w-full text-center bg-slate-600 border border-slate-500 rounded-md p-2 text-2xl font-bold text-white" value="Сергій Гробов">
+                    </div>
+
+                    <div id="title-field" class="w-full mt-1">
+                        <p class="text-xl font-light text-gray-300 view-content" id="title-view">Full Stack розробник</p>
+                        <input type="text" id="title-edit" class="edit-input w-full text-center bg-slate-600 border border-slate-500 rounded-md p-2 text-lg text-white" value="Full Stack розробник">
+                    </div>
+
+                    <div id="auth-controls" class="mt-6 flex flex-col sm:flex-row md:flex-col gap-3 w-full justify-center">
+                        <!-- Buttons will be injected here by JS -->
+                    </div>
+                </div>
+
+                <div class="mt-10">
+                    <h2 class="text-xl font-semibold text-white border-b-2 border-slate-600 pb-2">Contact</h2>
+                    <ul class="mt-4 space-y-3 text-lg">
+                        <li id="phone-field" class="flex items-center gap-3">
+                            <i class="fas fa-phone fa-fw text-slate-400"></i>
+                            <span class="view-content" id="phone-view">+380957143903</span>
+                            <input type="tel" id="phone-edit" class="edit-input bg-slate-600 border border-slate-500 rounded-md p-1 text-base w-full" value="+380957143903">
+                        </li>
+                        <li id="email-contact-field" class="flex items-center gap-3">
+                            <i class="fas fa-envelope fa-fw text-slate-400"></i>
+                             <a href="mailto:grobov47@gmail.com" class="view-content hover:text-white" id="email-contact-view">grobov47@gmail.com</a>
+                            <input type="email" id="email-contact-edit" class="edit-input bg-slate-600 border border-slate-500 rounded-md p-1 text-base w-full" value="grobov47@gmail.com">
+                        </li>
+                         <li id="linkedin-field" class="flex items-center gap-3">
+                            <i class="fab fa-linkedin fa-fw text-slate-400"></i>
+                            <a href="#" target="_blank" class="view-content hover:text-white" id="linkedin-view">LinkedIn</a>
+                            <input type="url" id="linkedin-edit" class="edit-input bg-slate-600 border border-slate-500 rounded-md p-1 text-base w-full" placeholder="LinkedIn profile URL">
+                        </li>
+                        <li id="github-field" class="flex items-center gap-3">
+                            <i class="fab fa-github fa-fw text-slate-400"></i>
+                            <a href="#" target="_blank" class="view-content hover:text-white" id="github-view">GitHub</a>
+                            <input type="url" id="github-edit" class="edit-input bg-slate-600 border border-slate-500 rounded-md p-1 text-base w-full" placeholder="GitHub profile URL">
+                        </li>
+                         <li id="location-field" class="flex items-center gap-3">
+                            <i class="fas fa-map-marker-alt fa-fw text-slate-400"></i>
+                            <span class="view-content" id="location-view">Київ, Україна</span>
+                            <input type="text" id="location-edit" class="edit-input bg-slate-600 border border-slate-500 rounded-md p-1 text-base w-full" value="Київ, Україна">
+                        </li>
+                    </ul>
+                </div>
+                 <div class="mt-10">
+                    <h2 class="text-xl font-semibold text-white border-b-2 border-slate-600 pb-2">Skills</h2>
+                    <div id="skills-field" class="mt-4 flex flex-wrap gap-2">
+                        <div class="view-content flex flex-wrap gap-2" id="skills-view">
+                            <!-- Tags will be injected here -->
+                        </div>
+                        <div class="edit-input w-full">
+                            <label class="text-sm text-gray-300">Skills (comma separated)</label>
+                            <textarea id="skills-edit" class="w-full bg-slate-600 border border-slate-500 rounded-md p-2 text-base text-white" rows="4"></textarea>
+                        </div>
+                    </div>
+                </div>
+                 <div class="mt-10">
+                    <h2 class="text-xl font-semibold text-white border-b-2 border-slate-600 pb-2">Languages</h2>
+                     <div id="languages-field" class="mt-4 space-y-2">
+                         <div class="view-content" id="languages-view">
+                           <!-- Languages will be injected here -->
+                         </div>
+                         <div class="edit-input w-full">
+                            <label class="text-sm text-gray-300">Languages (format: Language:Level, each on a new line)</label>
+                            <textarea id="languages-edit" class="w-full bg-slate-600 border border-slate-500 rounded-md p-2 text-base text-white" rows="3"></textarea>
+                         </div>
+                     </div>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="md:col-span-2">
+                <section id="summary-section">
+                    <h2 class="section-title">About Me</h2>
+                     <div id="summary-field">
+                        <p class="text-gray-700 leading-relaxed view-content" id="summary-view"></p>
+                        <textarea id="summary-edit" class="edit-input w-full border border-gray-300 rounded-md p-2" rows="5"></textarea>
+                     </div>
+                </section>
+
+                <section id="experience-section" class="mt-8">
+                    <h2 class="section-title">Work Experience</h2>
+                    <div id="experience-list" class="space-y-6">
+                        <!-- Experience items will be injected here -->
+                    </div>
+                     <div class="edit-input mt-4">
+                        <button id="add-experience" class="btn btn-secondary"><i class="fas fa-plus"></i> Add Experience</button>
+                    </div>
+                </section>
+
+                <section id="projects-section" class="mt-8">
+                    <h2 class="section-title">Projects</h2>
+                    <div id="projects-list" class="space-y-6">
+                        <!-- Project items will be injected here -->
+                    </div>
+                     <div class="edit-input mt-4">
+                        <button id="add-project" class="btn btn-secondary"><i class="fas fa-plus"></i> Add Project</button>
+                    </div>
+                </section>
+
+                <section id="education-section" class="mt-8">
+                    <h2 class="section-title">Education</h2>
+                    <div id="education-list" class="space-y-6">
+                       <!-- Education items will be injected here -->
+                    </div>
+                    <div class="edit-input mt-4">
+                        <button id="add-education" class="btn btn-secondary"><i class="fas fa-plus"></i> Add Education</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- КОНФІГУРАЦІЯ ---
+            // Ви можете змінити цей пароль на будь-який інший
+            const EDIT_PASSWORD = '(z0#2YOz&bNdpK1INo'; 
+            const LOCAL_STORAGE_KEY = 'interactiveResumeData';
+            
+            // --- ЗМІННІ СТАНУ ---
+            let isEditMode = false;
+            let resumeData = {};
+            
+            // --- ЕЛЕМЕНТИ DOM ---
+            const appContainer = document.getElementById('app-container');
+            const authControls = document.getElementById('auth-controls');
+            const passwordModal = document.getElementById('password-modal');
+            const passwordForm = document.getElementById('password-form');
+            const passwordInput = document.getElementById('password-input');
+            const cancelModalBtn = document.getElementById('cancel-modal-btn');
+            const modalError = document.getElementById('modal-error');
+        
+            // --- DEFAULT DATA ---
+            const defaultResumeData = {
+                name: "Serhii Hrobov",
+                title: "Full Stack Developer",
+                photoUrl: "https://sygrob.netlify.app/img/my-foto.jpg",
+                phone: "+380957143903",
+                emailContact: "grobov47@gmail.com",
+                linkedin: "https://www.linkedin.com/in/serhii-hrobov-702650228/",
+                github: "https://github.com/sygrob",
+                location: "Kyiv, Ukraine",
+                skills: ["JavaScript", "React", "Redux", "Node.js", "Express", "MongoDB", "HTML5", "CSS3", "SASS", "Git"],
+                languages: ["Ukrainian:Native", "English:Pre-intermediate"],
+                summary: "I am a Full Stack Developer with experience in creating dynamic web applications. I have deep knowledge of JavaScript and the React ecosystem, as well as experience working with Node.js for backend development. I strive to grow, learn new technologies, and apply them in practice to create high-quality and efficient solutions.",
+                experience: [ { id: Date.now(), title: "Frontend Developer", company: "IT-ACADEMY", period: "2021 - Present", description: "Development and maintenance of user interfaces for web applications using React and Redux. Interaction with REST API for data retrieval and display. Working in a team using Agile methodology." } ],
+                projects: [ { id: Date.now() + 1, name: "IceCream", link: "https://sygrob.github.io/team-proj-icecream/", description: "Team project, website for an ice cream company. Responsive design, animations, and interactive elements." } ],
+                education: [ { id: Date.now() + 2, degree: "Full Stack Developer", institution: "GoIT", period: "2021 - 2022" } ]
+            };
+
+            // --- РЕНДЕРИНГ ДАНИХ ---
+            function renderResume(data) {
+                if (!data) { data = defaultResumeData; }
+                resumeData = data; 
+
+                document.getElementById('photo-view').src = data.photoUrl || defaultResumeData.photoUrl;
+                document.getElementById('name-view').textContent = data.name || '';
+                document.getElementById('title-view').textContent = data.title || '';
+                document.getElementById('phone-view').textContent = data.phone || '';
+                document.getElementById('email-contact-view').textContent = data.emailContact || '';
+                document.getElementById('email-contact-view').href = `mailto:${data.emailContact || ''}`;
+                document.getElementById('linkedin-view').textContent = data.linkedin ? data.linkedin.split('/').filter(Boolean).pop() : 'LinkedIn';
+                document.getElementById('linkedin-view').href = data.linkedin || '#';
+                document.getElementById('github-view').textContent = data.github ? data.github.split('/').filter(Boolean).pop() : 'GitHub';
+                document.getElementById('github-view').href = data.github || '#';
+                document.getElementById('location-view').textContent = data.location || '';
+                document.getElementById('summary-view').textContent = data.summary || '';
+                
+                const skillsView = document.getElementById('skills-view');
+                skillsView.innerHTML = '';
+                if (data.skills && Array.isArray(data.skills)) {
+                    data.skills.forEach(skill => {
+                        const tag = document.createElement('span');
+                        tag.className = 'tag';
+                        tag.textContent = skill;
+                        skillsView.appendChild(tag);
+                    });
+                }
+                
+                const languagesView = document.getElementById('languages-view');
+                languagesView.innerHTML = '';
+                if (data.languages && Array.isArray(data.languages)) {
+                    data.languages.forEach(lang => {
+                        const [name, level] = lang.split(':');
+                        const p = document.createElement('p');
+                        p.innerHTML = `<span class="font-medium">${name}:</span> <span class="text-gray-300">${level}</span>`;
+                        languagesView.appendChild(p);
+                    });
+                }
+
+                renderDynamicList('experience', data.experience || [], renderExperienceItem);
+                renderDynamicList('projects', data.projects || [], renderProjectItem);
+                renderDynamicList('education', data.education || [], renderEducationItem);
+            }
+            
+            function renderDynamicList(key, items, renderer) {
+                const container = document.getElementById(`${key}-list`);
+                container.innerHTML = '';
+                if(items && Array.isArray(items)) {
+                    items.forEach(item => container.appendChild(renderer(item)));
+                }
+            }
+
+            const createItemHTML = (item, fields, type) => `
+                <div class="edit-input space-y-2 border p-3 rounded-md bg-gray-50">
+                    ${fields}
+                    <button class="btn btn-danger btn-sm delete-item" data-type="${type}"><i class="fas fa-trash"></i> Delete</button>
+                </div>
+            `;
+
+            function renderExperienceItem(item) {
+                const div = document.createElement('div');
+                div.className = 'relative';
+                div.dataset.id = item.id;
+                const fields = `
+                    <input type="text" data-field="title" class="w-full border p-1 rounded" value="${item.title || ''}" placeholder="Position">
+                    <input type="text" data-field="company" class="w-full border p-1 rounded" value="${item.company || ''}" placeholder="Company">
+                    <input type="text" data-field="period" class="w-full border p-1 rounded" value="${item.period || ''}" placeholder="Period">
+                    <textarea data-field="description" class="w-full border p-1 rounded" rows="3" placeholder="Description">${item.description || ''}</textarea>
+                `;
+                div.innerHTML = `
+                    <div class="view-content">
+                        <div class="flex justify-between items-baseline">
+                            <h3 class="text-lg font-semibold text-gray-900">${item.title || ''}</h3>
+                            <p class="text-sm text-gray-500">${item.period || ''}</p>
+                        </div>
+                        <p class="text-md text-gray-700 font-medium">${item.company || ''}</p>
+                        <p class="mt-2 text-gray-600">${item.description || ''}</p>
+                    </div>
+                    ${createItemHTML(item, fields, 'experience')}
+                `;
+                return div;
+            }
+
+            function renderProjectItem(item) {
+                 const div = document.createElement('div');
+                 div.className = 'relative';
+                 div.dataset.id = item.id;
+                 const fields = `
+                    <input type="text" data-field="name" class="w-full border p-1 rounded" value="${item.name || ''}" placeholder="Project Name">
+                    <input type="url" data-field="link" class="w-full border p-1 rounded" value="${item.link || ''}" placeholder="Link">
+                    <textarea data-field="description" class="w-full border p-1 rounded" rows="3" placeholder="Description">${item.description || ''}</textarea>
+                 `;
+                 div.innerHTML = `
+                    <div class="view-content">
+                        <div class="flex justify-between items-baseline">
+                             <h3 class="text-lg font-semibold text-gray-900">${item.name || ''}</h3>
+                             <a href="${item.link || '#'}" target="_blank" class="text-sm text-blue-600 hover:underline">View</a>
+                        </div>
+                        <p class="mt-2 text-gray-600">${item.description || ''}</p>
+                    </div>
+                    ${createItemHTML(item, fields, 'projects')}
+                `;
+                return div;
+            }
+
+            function renderEducationItem(item) {
+                const div = document.createElement('div');
+                div.className = 'relative';
+                div.dataset.id = item.id;
+                const fields = `
+                    <input type="text" data-field="degree" class="w-full border p-1 rounded" value="${item.degree || ''}" placeholder="Degree/Course">
+                    <input type="text" data-field="institution" class="w-full border p-1 rounded" value="${item.institution || ''}" placeholder="Institution">
+                    <input type="text" data-field="period" class="w-full border p-1 rounded" value="${item.period || ''}" placeholder="Period">
+                `;
+                div.innerHTML = `
+                    <div class="view-content">
+                        <div class="flex justify-between items-baseline">
+                            <h3 class="text-lg font-semibold text-gray-900">${item.degree || ''}</h3>
+                            <p class="text-sm text-gray-500">${item.period || ''}</p>
+                        </div>
+                        <p class="text-md text-gray-700 font-medium">${item.institution || ''}</p>
+                    </div>
+                    ${createItemHTML(item, fields, 'education')}
+                `;
+                return div;
+            }
+
+            // --- КЕРУВАННЯ СТАНОМ РЕДАГУВАННЯ ---
+            function enterEditMode() {
+                isEditMode = true;
+                appContainer.classList.add('editable');
+                populateEditFields();
+                updateAuthControls();
+            }
+
+            function exitEditMode(save = false) {
+                if (save) {
+                    saveDataToLocalStorage();
+                }
+                isEditMode = false;
+                appContainer.classList.remove('editable');
+                updateAuthControls();
+                renderResume(resumeData); // Перерендерити для чистоти
+            }
+
+            function updateAuthControls() {
+                authControls.innerHTML = '';
+                if (isEditMode) {
+                    const saveBtn = document.createElement('button');
+                    saveBtn.className = 'btn btn-primary';
+                    saveBtn.innerHTML = `<i class="fas fa-save"></i> Save`;
+                    saveBtn.onclick = () => exitEditMode(true);
+
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.className = 'btn btn-secondary';
+                    cancelBtn.innerHTML = `<i class="fas fa-times"></i> Cancel`;
+                    cancelBtn.onclick = () => exitEditMode(false);
+
+                    authControls.append(saveBtn, cancelBtn);
+                }
+                // Edit button removed - access only via ?edit=true URL parameter
+            }
+
+            passwordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (passwordInput.value === EDIT_PASSWORD) {
+                    passwordModal.classList.add('hidden');
+                    passwordInput.value = '';
+                    modalError.textContent = '';
+                    enterEditMode();
+                } else {
+                    modalError.textContent = 'Incorrect password.';
+                }
+            });
+
+            cancelModalBtn.addEventListener('click', () => {
+                passwordModal.classList.add('hidden');
+                passwordInput.value = '';
+                modalError.textContent = '';
+            });
+
+            // --- ЗБЕРЕЖЕННЯ/ЗАВАНТАЖЕННЯ ДАНИХ ---
+            function loadDataFromLocalStorage() {
+                const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+                resumeData = savedData ? JSON.parse(savedData) : defaultResumeData;
+            }
+
+            function saveDataToLocalStorage() {
+                const newData = {
+                    photoUrl: document.getElementById('photo-edit').value,
+                    name: document.getElementById('name-edit').value,
+                    title: document.getElementById('title-edit').value,
+                    phone: document.getElementById('phone-edit').value,
+                    emailContact: document.getElementById('email-contact-edit').value,
+                    linkedin: document.getElementById('linkedin-edit').value,
+                    github: document.getElementById('github-edit').value,
+                    location: document.getElementById('location-edit').value,
+                    summary: document.getElementById('summary-edit').value,
+                    skills: document.getElementById('skills-edit').value.split(',').map(s => s.trim()).filter(Boolean),
+                    languages: document.getElementById('languages-edit').value.split('\n').map(s => s.trim()).filter(Boolean),
+                    experience: collectDynamicListData('experience-list'),
+                    projects: collectDynamicListData('projects-list'),
+                    education: collectDynamicListData('education-list')
+                };
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newData));
+                resumeData = newData;
+                console.log("Data saved successfully to localStorage!");
+            }
+            
+            function populateEditFields() {
+                document.getElementById('photo-edit').value = resumeData.photoUrl || '';
+                document.getElementById('name-edit').value = resumeData.name || '';
+                document.getElementById('title-edit').value = resumeData.title || '';
+                document.getElementById('phone-edit').value = resumeData.phone || '';
+                document.getElementById('email-contact-edit').value = resumeData.emailContact || '';
+                document.getElementById('linkedin-edit').value = resumeData.linkedin || '';
+                document.getElementById('github-edit').value = resumeData.github || '';
+                document.getElementById('location-edit').value = resumeData.location || '';
+                document.getElementById('summary-edit').value = resumeData.summary || '';
+                document.getElementById('skills-edit').value = (resumeData.skills || []).join(', ');
+                document.getElementById('languages-edit').value = (resumeData.languages || []).join('\n');
+            }
+
+            function collectDynamicListData(containerId) {
+                const container = document.getElementById(containerId);
+                return Array.from(container.children).map(child => {
+                    const item = { id: parseInt(child.dataset.id, 10) || Date.now() };
+                    child.querySelectorAll('input[data-field], textarea[data-field]').forEach(input => {
+                        item[input.dataset.field] = input.value;
+                    });
+                    return item;
+                });
+            }
+            
+            // --- КЕРУВАННЯ ДИНАМІЧНИМИ СПИСКАМИ ---
+            function setupDynamicListControls() {
+                document.getElementById('add-experience').addEventListener('click', () => addDynamicItem('experience'));
+                document.getElementById('add-project').addEventListener('click', () => addDynamicItem('projects'));
+                document.getElementById('add-education').addEventListener('click', () => addDynamicItem('education'));
+
+                appContainer.addEventListener('click', (e) => {
+                    if (e.target.closest('.delete-item')) {
+                        const button = e.target.closest('.delete-item');
+                        button.closest('[data-id]').remove();
+                    }
+                });
+            }
+
+            function addDynamicItem(type) {
+                const newItemData = { id: Date.now() };
+                const renderer = getRendererForType(type);
+                const newItemElement = renderer(newItemData);
+                document.getElementById(`${type}-list`).appendChild(newItemElement);
+            }
+            
+            function getRendererForType(type) {
+                const renderers = {
+                    'experience': renderExperienceItem,
+                    'projects': renderProjectItem,
+                    'education': renderEducationItem
+                };
+                return renderers[type] || (() => document.createElement('div'));
+            }
+
+            // --- ЗАПУСК ДОДАТКУ ---
+            function init() {
+                loadDataFromLocalStorage();
+                renderResume(resumeData);
+                updateAuthControls();
+                setupDynamicListControls();
+
+                // Перевірка URL-параметра для входу в режим редагування
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('edit') === 'true') {
+                    passwordModal.classList.remove('hidden');
+                    passwordInput.focus();
+                }
+            }
+
+            init();
+        });
+    </script>
+</body>
+</html>
+
+
+
